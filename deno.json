@@ -1,0 +1,9 @@
+{
+  "tasks": {
+    "dev": "deno run --unstable-cron --allow-net --allow-env --allow-read main.ts",
+    "deploy": "deployctl deploy --project=domain-checker main.ts"
+  },
+  "imports": {
+    "@std/dotenv": "jsr:@std/dotenv@^0.225.3"
+  }
+}
