@@ -1,12 +1,12 @@
 import "@std/dotenv/load";
 
-// 設定
+// Configuration
 const config = {
   domains: Deno.env.get("DOMAINS")?.split(",").map(d => d.trim()) ?? [],
   notificationWebhook: Deno.env.get("DISCORD_WEBHOOK_URL") as string,
 };
 
-// 型定義
+// Type definitions
 type Domain = string;
 
 interface DomainStatus {
@@ -30,7 +30,7 @@ interface RdapResponse {
   }>;
 }
 
-// RDAPサーバー探索関数
+// RDAP server discovery function
 const findRdapServer = async (tld: string): Promise<string | null> => {
 
   try {
@@ -49,7 +49,7 @@ const findRdapServer = async (tld: string): Promise<string | null> => {
   }
 };
 
-// 特定ドメインのRDAP情報取得
+// Fetch RDAP information for a specific domain
 const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
   const tld = domain.split('.').pop() || "";
   const rdapServer = await findRdapServer(tld);
@@ -67,7 +67,7 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
     const rdapUrl = `${rdapServer}/domain/${domain}`;
     const response = await fetch(rdapUrl);
 
-    // 404はドメインが存在しない（=利用可能）
+    // 404 means the domain doesn't exist (= available)
     if (response.status === 404) {
       return {
         domain,
@@ -77,10 +77,10 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
       };
     }
 
-    // RDAPレスポンスを解析
+    // Parse RDAP response
     const data = await response.json() as RdapResponse;
 
-    // 関連情報の抽出
+    // Extract related information
     const extractRegistrar = (data: RdapResponse): string =>
       data.entities
         ?.find(e => e.roles?.includes("registrar"))
@@ -111,56 +111,55 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
   }
 };
 
-// Discord通知ペイロードの生成
-// Discord通知ペイロードの生成
+// Generate Discord notification payload
 const createNotificationPayload = (status: DomainStatus) => {
-  // ステータスに基づいて通知の色を決定
+  // Determine notification color based on status
   const getStatusColor = (status: DomainStatus): number => {
-    if (status.isAvailable) return 5814783; // 緑色（利用可能）
-    if (status.status.some(s => /redemption|pending\s*delete/i.test(s))) return 16776960; // 黄色（リデンプション期間）
-    return 15548997; // 赤色（その他のステータス）
+    if (status.isAvailable) return 5814783; // Green (available)
+    if (status.status.some(s => /redemption|pending\s*delete/i.test(s))) return 16776960; // Yellow (redemption period)
+    return 15548997; // Red (other statuses)
   };
 
   const color = getStatusColor(status);
   const statusText = status.status.join(", ");
 
   const title = status.isAvailable
-    ? `ドメイン利用可能: ${status.domain}`
-    : `ドメインステータス更新: ${status.domain}`;
+    ? `Domain Available: ${status.domain}`
+    : `Domain Status Update: ${status.domain}`;
 
   const description = status.isAvailable
-    ? "このドメインは現在登録可能な状態です。すぐに登録手続きを行ってください。"
+    ? "This domain is currently available for registration. Please proceed with registration immediately."
     : status.status.some(s => /redemption|pending\s*delete/i.test(s))
-      ? "このドメインはリデンプション期間またはペンディングデリート状態にあります。間もなく利用可能になる可能性があります。"
-      : "このドメインのステータスが更新されました。";
+      ? "This domain is in redemption period or pending delete status. It may become available soon."
+      : "The status of this domain has been updated.";
 
-  // メンション追加（登録可能な場合）
+  // Add mention (if available)
   const content = status.isAvailable
-    ? `@everyone 🔍 ドメイン ${status.domain} が利用可能になりました！登録手続きを行ってください！`
-    : `🔍 ドメイン ${status.domain} のステータス: **${statusText}**`;
+    ? `@everyone 🔍 Domain ${status.domain} is now available! Please proceed with registration!`
+    : `🔍 Domain ${status.domain} status: **${statusText}**`;
 
-  // 追加情報フィールドを構築
+  // Build additional info fields
   const infoFields = [];
 
   infoFields.push({
-    name: "ステータス",
-    value: statusText || "不明",
+    name: "Status",
+    value: statusText || "Unknown",
     inline: true
   });
 
   if (status.registrar || status.expiryDate) {
     infoFields.push({
-      name: "情報",
+      name: "Information",
       value: [
-        status.registrar ? `登録者: ${status.registrar}` : "",
-        status.expiryDate ? `有効期限: ${status.expiryDate}` : ""
-      ].filter(Boolean).join("\n") || "詳細情報なし",
+        status.registrar ? `Registrar: ${status.registrar}` : "",
+        status.expiryDate ? `Expiry Date: ${status.expiryDate}` : ""
+      ].filter(Boolean).join("\n") || "No detailed information",
       inline: true
     });
   }
 
   infoFields.push({
-    name: "登録リンク (利用可能な場合)",
+    name: "Registration Links (if available)",
     value: [
       `[Namecheap](https://www.namecheap.com/domains/registration/results/?domain=${status.domain})`,
       `[Google Domains](https://domains.google.com/registrar/search?searchTerm=${status.domain})`,
@@ -180,7 +179,7 @@ const createNotificationPayload = (status: DomainStatus) => {
   };
 };
 
-// Discord通知の送信
+// Send Discord notification
 const sendNotification = async (status: DomainStatus): Promise<void> => {
   try {
     const payload = createNotificationPayload(status);
@@ -191,45 +190,45 @@ const sendNotification = async (status: DomainStatus): Promise<void> => {
       body: JSON.stringify(payload)
     });
 
-    console.log(`通知送信成功: ${status.domain} (ステータス: ${status.status.join(", ")})`);
+    console.log(`Notification sent successfully: ${status.domain} (Status: ${status.status.join(", ")})`);
   } catch (error) {
-    console.error("通知送信エラー:", error);
+    console.error("Notification sending error:", error);
   }
 };
 
-// メインのドメインチェック処理
+// Main domain checking process
 const checkDomain = async (domain: Domain): Promise<DomainStatus> => {
-  console.log(`ドメインをチェック中: ${domain}`);
+  console.log(`Checking domain: ${domain}`);
   const status = await fetchRdapInfo(domain);
-  console.log(`結果: ${domain} - ${status.isAvailable ? "利用可能" : "利用不可"} - ${status.status.join(", ")}`);
+  console.log(`Result: ${domain} - ${status.isAvailable ? "Available" : "Unavailable"} - ${status.status.join(", ")}`);
   return status;
 };
 
-// すべてのドメインをチェックして通知
+// Check all domains and send notifications
 const monitorDomains = async (): Promise<void> => {
-  console.log(`${new Date().toISOString()} - ドメイン監視を実行します`);
+  console.log(`${new Date().toISOString()} - Running domain monitoring`);
 
-  // 設定されたすべてのドメインを並行処理
+  // Process all configured domains in parallel
   const results = await Promise.all(
     config.domains.map(async domain => {
       try {
-        // 各ドメインをチェック
+        // Check each domain
         const status = await checkDomain(domain);
 
-        // 興味深いステータスの場合は通知
+        // Notify for interesting statuses
         await sendNotification(status);
 
         return { success: true, domain, status };
       } catch (error) {
-        console.error(`ドメイン ${domain} の処理中にエラーが発生:`, error);
+        console.error(`Error processing domain ${domain}:`, error);
         return { success: false, domain, error };
       }
     })
   );
 
   const successCount = results.filter(r => r.success).length;
-  console.log(`ドメイン監視完了: ${successCount}/${config.domains.length} 成功`);
+  console.log(`Domain monitoring completed: ${successCount}/${config.domains.length} successful`);
 };
 
-// Deno組み込みのcron機能を使用
+// Use Deno's built-in cron functionality
 Deno.cron("domain-monitor-task", "*/5 * * * *", monitorDomains);
