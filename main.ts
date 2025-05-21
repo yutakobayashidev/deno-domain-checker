@@ -9,7 +9,7 @@ const config = {
 // Type definitions
 type Domain = string;
 
-interface DomainStatus {
+export interface DomainStatus {
   domain: Domain;
   isAvailable: boolean;
   status: string[];
@@ -31,7 +31,7 @@ interface RdapResponse {
 }
 
 // RDAP server discovery function
-const findRdapServer = async (tld: string): Promise<string | null> => {
+export const findRdapServer = async (tld: string): Promise<string | null> => {
 
   try {
     const response = await fetch("https://data.iana.org/rdap/dns.json");
@@ -112,7 +112,7 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
 };
 
 // Generate Discord notification payload
-const createNotificationPayload = (status: DomainStatus) => {
+export const createNotificationPayload = (status: DomainStatus) => {
   // Determine notification color based on status
   const getStatusColor = (status: DomainStatus): number => {
     if (status.isAvailable) return 5814783; // Green (available)
