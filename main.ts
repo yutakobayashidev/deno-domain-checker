@@ -10,7 +10,7 @@ const config = {
 // Type definitions
 type Domain = string;
 
-interface DomainStatus {
+export interface DomainStatus {
   domain: Domain;
   isAvailable: boolean;
   status: string[];
@@ -19,11 +19,15 @@ interface DomainStatus {
   timestamp: Date;
 }
 
+// Define types for RDAP response
 interface RdapResponse {
   status?: string[];
   entities?: Array<{
     roles?: string[];
-    vcardArray?: any[];
+    vcardArray?: [
+      string,
+      Array<[string, Record<string, unknown>, string, string]>,
+    ];
   }>;
   events?: Array<{
     eventAction?: string;
@@ -32,13 +36,15 @@ interface RdapResponse {
 }
 
 // RDAP server discovery function
-const findRdapServer = async (tld: string): Promise<string | null> => {
+export const findRdapServer = async (tld: string): Promise<string | null> => {
   try {
     const response = await fetch("https://data.iana.org/rdap/dns.json");
     const data = await response.json();
 
     const server = data.services
-      .find((service: any[]) => service[0].includes(`${tld}`))
+      .find((service: Array<Array<string> | string>) =>
+        service[0].includes(`${tld}`)
+      )
       ?.[1]?.[0];
 
     return server || null;
@@ -85,7 +91,7 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
       data.entities
         ?.find((e) => e.roles?.includes("registrar"))
         ?.vcardArray?.[1]
-        ?.find((v: string[]) => v[0] === "fn")?.[3] || "Unknown";
+        ?.find((v) => v[0] === "fn")?.[3] || "Unknown";
 
     const extractExpiryDate = (data: RdapResponse): string =>
       data.events
@@ -112,7 +118,7 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
 };
 
 // Generate Discord notification payload
-const createNotificationPayload = (status: DomainStatus) => {
+export const createNotificationPayload = (status: DomainStatus) => {
   // Determine notification color based on status
   const getStatusColor = (status: DomainStatus): number => {
     if (status.isAvailable) return 5814783; // Green (available)
@@ -141,7 +147,13 @@ const createNotificationPayload = (status: DomainStatus) => {
     : `🔍 Domain ${status.domain} status: **${statusText}**`;
 
   // Build additional info fields
-  const infoFields = [];
+  type InfoField = {
+    name: string;
+    value: string;
+    inline?: boolean;
+  };
+
+  const infoFields: InfoField[] = [];
 
   infoFields.push({
     name: "Status",
