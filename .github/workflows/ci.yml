@@ -29,4 +29,4 @@ jobs:
         run: deno check main.ts
 
       - name: Run tests
-        run: deno test --allow-env --allow-net
+        run: deno test --allow-env --allow-net --allow-read --unstable-cron
