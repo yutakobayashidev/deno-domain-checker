@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Discord Integration
+
+The Discord integration handles all notifications for domain status changes.
+
+## Implementation
+
+The Discord functionality is implemented in @discord.ts and provides:
+
+- Webhook-based notifications
+- Rich message formatting
+- Status change alerts
+- Configurable mentions
+
+## Configuration
+
+Discord integration requires:
+1. A webhook URL (set via `DISCORD_WEBHOOK_URL` in `.env`)
+2. Optional mention configuration (set via `DISCORD_MENTION` in `.env`)
+
+## Notification Types
+
+The system sends different types of notifications:
+
+### Domain Status Changes
+- Domain becomes available
+- Domain enters redemption period
+- Domain enters pending delete status
+- Domain status changes to active
+
+### System Notifications
+- Application startup
+- Error conditions
+- Rate limit warnings
+
+## Message Format
+
+Notifications include:
+- Domain name
+- Current status
+- Previous status (for changes)
+- Timestamp
+- Relevant links
+- Color-coded status indicators
+
+## Example Configuration
+
+```env
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your-webhook-url
+DISCORD_MENTION=@domain-alerts
+```
+
+## Error Handling
+
+The Discord integration includes:
+- Retry logic for failed notifications
+- Rate limit handling
+- Webhook validation
+- Fallback notification methods

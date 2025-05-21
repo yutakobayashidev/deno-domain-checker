@@ -1,0 +1,47 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Deno Domain Checker Project Overview
+
+This is a domain monitoring system built with Deno that tracks domain status and sends notifications via Discord.
+
+## Key Components
+
+- @main.ts - The main entry point that initializes and runs the domain checker
+- @config.ts - Configuration management and environment variable handling
+- @rdap.ts - RDAP protocol implementation for domain status checking
+- @discord.ts - Discord webhook integration for notifications
+
+## Project Structure
+
+The application follows a modular structure:
+- Core domain checking logic in the RDAP module
+- Configuration management for environment variables
+- Discord integration for notifications
+- Main application loop for periodic checks
+
+## Key Features
+
+- Domain status monitoring using RDAP protocol
+- Discord notifications for status changes
+- Configurable check intervals
+- Support for multiple domains
+- Special handling for redemption period and pending delete status
+
+## Development
+
+To run the application locally:
+```bash
+deno task dev
+```
+
+For deployment:
+```bash
+deno task deploy
+```
+
+## Configuration
+
+The application is configured through environment variables defined in `.env`. See @README.md for detailed configuration options.

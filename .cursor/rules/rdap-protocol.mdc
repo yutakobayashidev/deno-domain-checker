@@ -1,0 +1,56 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# RDAP Protocol Implementation
+
+The RDAP (Registration Data Access Protocol) implementation is a core component of this domain checker.
+
+## Implementation Details
+
+The RDAP functionality is implemented in @rdap.ts and provides:
+
+- RDAP server discovery for different TLDs
+- Domain status querying
+- Response parsing and status interpretation
+- Error handling for RDAP queries
+
+## Key Concepts
+
+### Domain Status Types
+
+The system tracks several domain statuses:
+- `active` - Domain is registered and active
+- `redemptionPeriod` - Domain is in redemption period
+- `pendingDelete` - Domain is pending deletion
+- `available` - Domain is available for registration
+
+### RDAP Server Discovery
+
+The system automatically discovers the appropriate RDAP server for each TLD by:
+1. Querying the IANA RDAP bootstrap service
+2. Caching server information for efficiency
+3. Handling fallback servers when needed
+
+### Error Handling
+
+The RDAP implementation includes robust error handling for:
+- Network failures
+- Invalid responses
+- Rate limiting
+- Server unavailability
+
+## Usage Example
+
+```typescript
+// Example of checking domain status
+const status = await checkDomainStatus("example.com");
+if (status === "available") {
+  // Handle available domain
+} else if (status === "redemptionPeriod") {
+  // Handle redemption period
+}
+```
+
+For more information about RDAP, see the @ICANN RDAP documentation.
