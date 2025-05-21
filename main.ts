@@ -176,7 +176,6 @@ export const createNotificationPayload = (status: DomainStatus) => {
     name: "Registration Links (if available)",
     value: [
       `[Namecheap](https://www.namecheap.com/domains/registration/results/?domain=${status.domain})`,
-      `[Google Domains](https://domains.google.com/registrar/search?searchTerm=${status.domain})`,
       `[GoDaddy](https://www.godaddy.com/domainsearch/find?domainToCheck=${status.domain})`,
     ].join("\n"),
   });
