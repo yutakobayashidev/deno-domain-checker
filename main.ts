@@ -24,7 +24,10 @@ interface RdapResponse {
   status?: string[];
   entities?: Array<{
     roles?: string[];
-    vcardArray?: [string, Array<[string, Record<string, unknown>, string, string]>];
+    vcardArray?: [
+      string,
+      Array<[string, Record<string, unknown>, string, string]>,
+    ];
   }>;
   events?: Array<{
     eventAction?: string;
@@ -39,7 +42,9 @@ export const findRdapServer = async (tld: string): Promise<string | null> => {
     const data = await response.json();
 
     const server = data.services
-      .find((service: Array<Array<string> | string>) => service[0].includes(`${tld}`))
+      .find((service: Array<Array<string> | string>) =>
+        service[0].includes(`${tld}`)
+      )
       ?.[1]?.[0];
 
     return server || null;
@@ -147,7 +152,7 @@ export const createNotificationPayload = (status: DomainStatus) => {
     value: string;
     inline?: boolean;
   };
-  
+
   const infoFields: InfoField[] = [];
 
   infoFields.push({
