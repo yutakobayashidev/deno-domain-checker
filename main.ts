@@ -2,7 +2,7 @@ import "@std/dotenv/load";
 
 // Configuration
 const config = {
-  domains: Deno.env.get("DOMAINS")?.split(",").map(d => d.trim()) ?? [],
+  domains: Deno.env.get("DOMAINS")?.split(",").map((d) => d.trim()) ?? [],
   notificationWebhook: Deno.env.get("DISCORD_WEBHOOK_URL") as string,
 };
 
@@ -32,7 +32,6 @@ interface RdapResponse {
 
 // RDAP server discovery function
 export const findRdapServer = async (tld: string): Promise<string | null> => {
-
   try {
     const response = await fetch("https://data.iana.org/rdap/dns.json");
     const data = await response.json();
@@ -43,7 +42,7 @@ export const findRdapServer = async (tld: string): Promise<string | null> => {
 
     return server || null;
   } catch (error) {
-    console.log(error)
+    console.log(error);
     console.error("RDAP server lookup error:", error);
     return null;
   }
@@ -51,7 +50,7 @@ export const findRdapServer = async (tld: string): Promise<string | null> => {
 
 // Fetch RDAP information for a specific domain
 const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
-  const tld = domain.split('.').pop() || "";
+  const tld = domain.split(".").pop() || "";
   const rdapServer = await findRdapServer(tld);
 
   if (!rdapServer) {
@@ -59,7 +58,7 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
       domain,
       isAvailable: false,
       status: ["RDAP server not found"],
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -73,7 +72,7 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
         domain,
         isAvailable: true,
         status: ["Available for registration"],
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
 
@@ -83,13 +82,13 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
     // Extract related information
     const extractRegistrar = (data: RdapResponse): string =>
       data.entities
-        ?.find(e => e.roles?.includes("registrar"))
+        ?.find((e) => e.roles?.includes("registrar"))
         ?.vcardArray?.[1]
         ?.find((v: string[]) => v[0] === "fn")?.[3] || "Unknown";
 
     const extractExpiryDate = (data: RdapResponse): string =>
       data.events
-        ?.find(e => e.eventAction === "expiration")
+        ?.find((e) => e.eventAction === "expiration")
         ?.eventDate || "";
 
     return {
@@ -98,7 +97,7 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
       status: data.status || ["Active"],
       registrar: extractRegistrar(data),
       expiryDate: extractExpiryDate(data),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   } catch (error) {
     console.error(`RDAP query error for ${domain}:`, error);
@@ -106,7 +105,7 @@ const fetchRdapInfo = async (domain: Domain): Promise<DomainStatus> => {
       domain,
       isAvailable: false,
       status: ["Error querying RDAP"],
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 };
@@ -116,7 +115,9 @@ export const createNotificationPayload = (status: DomainStatus) => {
   // Determine notification color based on status
   const getStatusColor = (status: DomainStatus): number => {
     if (status.isAvailable) return 5814783; // Green (available)
-    if (status.status.some(s => /redemption|pending\s*delete/i.test(s))) return 16776960; // Yellow (redemption period)
+    if (status.status.some((s) => /redemption|pending\s*delete/i.test(s))) {
+      return 16776960; // Yellow (redemption period)
+    }
     return 15548997; // Red (other statuses)
   };
 
@@ -129,9 +130,9 @@ export const createNotificationPayload = (status: DomainStatus) => {
 
   const description = status.isAvailable
     ? "This domain is currently available for registration. Please proceed with registration immediately."
-    : status.status.some(s => /redemption|pending\s*delete/i.test(s))
-      ? "This domain is in redemption period or pending delete status. It may become available soon."
-      : "The status of this domain has been updated.";
+    : status.status.some((s) => /redemption|pending\s*delete/i.test(s))
+    ? "This domain is in redemption period or pending delete status. It may become available soon."
+    : "The status of this domain has been updated.";
 
   // Add mention (if available)
   const content = status.isAvailable
@@ -144,7 +145,7 @@ export const createNotificationPayload = (status: DomainStatus) => {
   infoFields.push({
     name: "Status",
     value: statusText || "Unknown",
-    inline: true
+    inline: true,
   });
 
   if (status.registrar || status.expiryDate) {
@@ -152,9 +153,9 @@ export const createNotificationPayload = (status: DomainStatus) => {
       name: "Information",
       value: [
         status.registrar ? `Registrar: ${status.registrar}` : "",
-        status.expiryDate ? `Expiry Date: ${status.expiryDate}` : ""
+        status.expiryDate ? `Expiry Date: ${status.expiryDate}` : "",
       ].filter(Boolean).join("\n") || "No detailed information",
-      inline: true
+      inline: true,
     });
   }
 
@@ -163,8 +164,8 @@ export const createNotificationPayload = (status: DomainStatus) => {
     value: [
       `[Namecheap](https://www.namecheap.com/domains/registration/results/?domain=${status.domain})`,
       `[Google Domains](https://domains.google.com/registrar/search?searchTerm=${status.domain})`,
-      `[GoDaddy](https://www.godaddy.com/domainsearch/find?domainToCheck=${status.domain})`
-    ].join("\n")
+      `[GoDaddy](https://www.godaddy.com/domainsearch/find?domainToCheck=${status.domain})`,
+    ].join("\n"),
   });
 
   return {
@@ -174,8 +175,8 @@ export const createNotificationPayload = (status: DomainStatus) => {
       description,
       color,
       fields: infoFields,
-      timestamp: status.timestamp.toISOString()
-    }]
+      timestamp: status.timestamp.toISOString(),
+    }],
   };
 };
 
@@ -187,10 +188,14 @@ const sendNotification = async (status: DomainStatus): Promise<void> => {
     await fetch(config.notificationWebhook, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
-    console.log(`Notification sent successfully: ${status.domain} (Status: ${status.status.join(", ")})`);
+    console.log(
+      `Notification sent successfully: ${status.domain} (Status: ${
+        status.status.join(", ")
+      })`,
+    );
   } catch (error) {
     console.error("Notification sending error:", error);
   }
@@ -200,7 +205,11 @@ const sendNotification = async (status: DomainStatus): Promise<void> => {
 const checkDomain = async (domain: Domain): Promise<DomainStatus> => {
   console.log(`Checking domain: ${domain}`);
   const status = await fetchRdapInfo(domain);
-  console.log(`Result: ${domain} - ${status.isAvailable ? "Available" : "Unavailable"} - ${status.status.join(", ")}`);
+  console.log(
+    `Result: ${domain} - ${
+      status.isAvailable ? "Available" : "Unavailable"
+    } - ${status.status.join(", ")}`,
+  );
   return status;
 };
 
@@ -210,7 +219,7 @@ const monitorDomains = async (): Promise<void> => {
 
   // Process all configured domains in parallel
   const results = await Promise.all(
-    config.domains.map(async domain => {
+    config.domains.map(async (domain) => {
       try {
         // Check each domain
         const status = await checkDomain(domain);
@@ -223,11 +232,13 @@ const monitorDomains = async (): Promise<void> => {
         console.error(`Error processing domain ${domain}:`, error);
         return { success: false, domain, error };
       }
-    })
+    }),
   );
 
-  const successCount = results.filter(r => r.success).length;
-  console.log(`Domain monitoring completed: ${successCount}/${config.domains.length} successful`);
+  const successCount = results.filter((r) => r.success).length;
+  console.log(
+    `Domain monitoring completed: ${successCount}/${config.domains.length} successful`,
+  );
 };
 
 // Use Deno's built-in cron functionality
