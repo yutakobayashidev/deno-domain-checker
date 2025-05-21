@@ -13,6 +13,22 @@ and sends notifications via Discord when changes are detected.
 - Automatically run checks at regular intervals (default: every 5 minutes)
 - Highlight domains in redemption period or pending delete status
 
+## What is RDAP?
+
+RDAP (Registration Data Access Protocol) is a modern protocol designed to
+replace the older WHOIS protocol for querying domain registration data. It
+provides structured, machine-readable data about domain names, IP addresses, and
+autonomous system numbers.
+
+This tool uses RDAP to check domain status and availability by:
+
+1. Discovering the appropriate RDAP server for a given top-level domain
+2. Querying that server for domain registration information
+3. Parsing the response to determine domain status
+
+For more information about RDAP, visit the
+[ICANN RDAP resource page](https://www.icann.org/en/contracted-parties/registry-operators/resources/registration-data-access-protocol).
+
 ## Usage
 
 1. Clone the repository
