@@ -4,6 +4,7 @@ import "@std/dotenv/load";
 const config = {
   domains: Deno.env.get("DOMAINS")?.split(",").map((d) => d.trim()) ?? [],
   notificationWebhook: Deno.env.get("DISCORD_WEBHOOK_URL") as string,
+  discordMention: Deno.env.get("DISCORD_MENTION") || "@domain-alerts",
 };
 
 // Type definitions
@@ -136,7 +137,7 @@ export const createNotificationPayload = (status: DomainStatus) => {
 
   // Add mention (if available)
   const content = status.isAvailable
-    ? `@everyone 🔍 Domain ${status.domain} is now available! Please proceed with registration!`
+    ? `${config.discordMention} 🔍 Domain ${status.domain} is now available! Please proceed with registration!`
     : `🔍 Domain ${status.domain} status: **${statusText}**`;
 
   // Build additional info fields
